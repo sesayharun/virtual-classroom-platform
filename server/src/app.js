@@ -5,6 +5,7 @@ import helmet from "helmet";
 import authRoutes from "./routes/auth.js";
 import assignmentRoutes from "./routes/assignments.js";
 import classRoutes from "./routes/classes.js";
+import materialRoutes from "./routes/materials.js";
 import { verifyDatabaseConnection } from "./config/db.js";
 
 const app = express();
@@ -21,6 +22,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/classes", classRoutes);
+app.use("/api/materials", materialRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "API endpoint not found." });
