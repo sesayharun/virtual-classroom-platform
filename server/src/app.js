@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import authRoutes from "./routes/auth.js";
+import assignmentRoutes from "./routes/assignments.js";
 import classRoutes from "./routes/classes.js";
 import { verifyDatabaseConnection } from "./config/db.js";
 
@@ -18,6 +19,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/assignments", assignmentRoutes);
 app.use("/api/classes", classRoutes);
 
 app.use((_req, res) => {
