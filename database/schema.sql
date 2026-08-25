@@ -44,3 +44,37 @@ CREATE TABLE IF NOT EXISTS enrollments (
   CONSTRAINT fk_enrollments_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
   CONSTRAINT fk_enrollments_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS assignments (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  class_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(180) NOT NULL,
+  instructions TEXT NOT NULL,
+  due_at DATETIME NOT NULL,
+  created_by BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_assignments_class (class_id),
+  KEY idx_assignments_due (due_at),
+  CONSTRAINT fk_assignments_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_assignments_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS submissions (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  assignment_id BIGINT UNSIGNED NOT NULL,
+  student_id BIGINT UNSIGNED NOT NULL,
+  content TEXT NOT NULL,
+  file_url VARCHAR(1000) NULL,
+  status ENUM('submitted', 'graded') NOT NULL DEFAULT 'submitted',
+  grade DECIMAL(5,2) NULL,
+  feedback TEXT NULL,
+  submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_submissions_assignment_student (assignment_id, student_id),
+  KEY idx_submissions_student (student_id),
+  CONSTRAINT fk_submissions_assignment FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+  CONSTRAINT fk_submissions_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
