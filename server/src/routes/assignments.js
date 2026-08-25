@@ -23,7 +23,7 @@ router.get("/", async (req, res, next) => {
     } else if (req.user.role === "student") {
       sql = `SELECT a.id, a.class_id AS classId, a.title, a.instructions, a.due_at AS dueAt,
                     a.created_at AS createdAt, c.code AS classCode, c.title AS classTitle,
-                    s.id AS submissionId, s.status, s.grade, s.submitted_at AS submittedAt
+                    s.id AS submissionId, s.status, s.grade, s.feedback, s.submitted_at AS submittedAt
              FROM assignments a
              JOIN classes c ON c.id = a.class_id
              JOIN enrollments e ON e.class_id = c.id AND e.student_id = ?
