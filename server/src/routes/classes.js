@@ -20,34 +20,28 @@ router.get("/", async (req, res, next) => {
     if (req.user.role === "teacher") {
       sql = `SELECT c.id, c.code, c.title, c.description, c.schedule,
                     c.teacher_id AS teacherId, u.full_name AS teacherName,
-                    COUNT(e.id) AS studentCount, c.created_at AS createdAt
+                    (SELECT COUNT(*) FROM enrollments count_e WHERE count_e.class_id = c.id) AS studentCount, c.created_at AS createdAt
              FROM classes c
              JOIN users u ON u.id = c.teacher_id
-             LEFT JOIN enrollments e ON e.class_id = c.id
              WHERE c.teacher_id = ?
-             GROUP BY c.id
              ORDER BY c.created_at DESC`;
       params = [req.user.id];
     } else if (req.user.role === "student") {
       sql = `SELECT c.id, c.code, c.title, c.description, c.schedule,
                     c.teacher_id AS teacherId, u.full_name AS teacherName,
-                    COUNT(all_enrollments.id) AS studentCount, c.created_at AS createdAt
+                    (SELECT COUNT(*) FROM enrollments count_e WHERE count_e.class_id = c.id) AS studentCount, c.created_at AS createdAt
              FROM enrollments mine
              JOIN classes c ON c.id = mine.class_id
              JOIN users u ON u.id = c.teacher_id
-             LEFT JOIN enrollments all_enrollments ON all_enrollments.class_id = c.id
              WHERE mine.student_id = ?
-             GROUP BY c.id
              ORDER BY mine.enrolled_at DESC`;
       params = [req.user.id];
     } else {
       sql = `SELECT c.id, c.code, c.title, c.description, c.schedule,
                     c.teacher_id AS teacherId, u.full_name AS teacherName,
-                    COUNT(e.id) AS studentCount, c.created_at AS createdAt
+                    (SELECT COUNT(*) FROM enrollments count_e WHERE count_e.class_id = c.id) AS studentCount, c.created_at AS createdAt
              FROM classes c
              JOIN users u ON u.id = c.teacher_id
-             LEFT JOIN enrollments e ON e.class_id = c.id
-             GROUP BY c.id
              ORDER BY c.created_at DESC`;
       params = [];
     }
@@ -119,12 +113,11 @@ router.get("/:id", async (req, res, next) => {
     const [rows] = await pool.execute(
       `SELECT c.id, c.code, c.title, c.description, c.schedule,
               c.teacher_id AS teacherId, u.full_name AS teacherName,
-              COUNT(e.id) AS studentCount, c.created_at AS createdAt
+              (SELECT COUNT(*) FROM enrollments count_e WHERE count_e.class_id = c.id) AS studentCount, c.created_at AS createdAt
        FROM classes c
        JOIN users u ON u.id = c.teacher_id
-       LEFT JOIN enrollments e ON e.class_id = c.id
        WHERE c.id = ?
-       GROUP BY c.id`,
+`,
       [req.params.id],
     );
     if (!rows.length) return res.status(404).json({ message: "Class not found." });
