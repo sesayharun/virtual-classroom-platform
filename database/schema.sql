@@ -94,3 +94,26 @@ CREATE TABLE IF NOT EXISTS materials (
   CONSTRAINT fk_materials_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
   CONSTRAINT fk_materials_uploader FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE RESTRICT
 );
+
+CREATE TABLE IF NOT EXISTS attendance_sessions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  class_id BIGINT UNSIGNED NOT NULL,
+  session_date DATE NOT NULL,
+  topic VARCHAR(180) NULL,
+  created_by BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_attendance_class_date (class_id, session_date),
+  CONSTRAINT fk_attendance_session_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_attendance_session_teacher FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS attendance_records (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  session_id BIGINT UNSIGNED NOT NULL,
+  student_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('present','absent') NOT NULL,
+  recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_attendance_session_student (session_id, student_id),
+  CONSTRAINT fk_attendance_record_session FOREIGN KEY (session_id) REFERENCES attendance_sessions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_attendance_record_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
