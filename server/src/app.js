@@ -7,6 +7,7 @@ import assignmentRoutes from "./routes/assignments.js";
 import attendanceRoutes from "./routes/attendance.js";
 import classRoutes from "./routes/classes.js";
 import materialRoutes from "./routes/materials.js";
+import discussionRoutes from "./routes/discussions.js";
 import { verifyDatabaseConnection } from "./config/db.js";
 
 const app = express();
@@ -25,6 +26,7 @@ app.use("/api/assignments", assignmentRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/materials", materialRoutes);
+app.use("/api/discussions", discussionRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "API endpoint not found." });
