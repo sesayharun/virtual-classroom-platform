@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import AuthScreen, { AuthUser } from "./components/AuthScreen";
+import ClassroomView from "./components/ClassroomView";
+import AssignmentView from "./components/AssignmentView";
+import MaterialView from "./components/MaterialView";
+import AttendanceView from "./components/AttendanceView";
+import DiscussionView from "./components/DiscussionView";
 
 type View = "Overview" | "Classes" | "Assignments" | "Materials" | "Attendance" | "Discussion";
 type Role = "Student" | "Teacher" | "Admin";
@@ -50,12 +55,14 @@ export default function Home(){
   const[view,setView]=useState<View>("Overview");
   const[open,setOpen]=useState(false);
   const[user,setUser]=useState<AuthUser|null>(null);
+  const[token,setToken]=useState("");
   const[ready,setReady]=useState(false);
 
   useEffect(()=>{
     const saved=localStorage.getItem("uniclass_user");
-    if(saved){
-      try{setUser(JSON.parse(saved) as AuthUser)}catch{localStorage.removeItem("uniclass_user");localStorage.removeItem("uniclass_token")}
+    const savedToken=localStorage.getItem("uniclass_token")||"";
+    if(saved&&savedToken){
+      try{setUser(JSON.parse(saved) as AuthUser);setToken(savedToken)}catch{localStorage.removeItem("uniclass_user");localStorage.removeItem("uniclass_token")}
     }
     setReady(true);
   },[]);
@@ -63,12 +70,14 @@ export default function Home(){
   function authenticated(nextUser:AuthUser,token:string){
     localStorage.setItem("uniclass_user",JSON.stringify(nextUser));
     localStorage.setItem("uniclass_token",token);
+    setToken(token);
     setUser(nextUser);
   }
 
   function logout(){
     localStorage.removeItem("uniclass_user");
     localStorage.removeItem("uniclass_token");
+    setToken("");
     setUser(null);
     setView("Overview");
   }
@@ -79,5 +88,5 @@ export default function Home(){
   const role=(user.role.charAt(0).toUpperCase()+user.role.slice(1)) as Role;
   const initials=user.fullName.split(" ").map(name=>name[0]).join("").slice(0,2).toUpperCase();
 
-  return <div className="shell"><aside className={open?"open":""}><div className="brand"><span>U</span><div><b>UniClass</b><small>Virtual learning</small></div></div><nav>{menu.map(m=><button key={m.name} className={view===m.name?"active":""} onClick={()=>{setView(m.name);setOpen(false)}}><span>{m.icon}</span>{m.name}{m.name==="Assignments"&&<i>2</i>}</button>)}</nav><div className="help"><span>?</span><b>Need help?</b><p>Visit the student support centre.</p><button>Get support</button></div><footer><span className="avatar">{initials}</span><div><b>{user.fullName}</b><small>{role}</small></div><button onClick={logout} title="Sign out">↪</button></footer></aside><main><header className="top"><button className="hamburger" onClick={()=>setOpen(!open)}>☰</button><div>UniClass <span>/</span> <b>{view}</b></div><span className="role-badge">{role}</span><button className="notice">♢<i/></button><span className="avatar">{initials}</span></header><div className="content">{view==="Overview"?<Overview role={role} setView={setView} name={user.fullName}/>:view==="Classes"?<Classes/>:view==="Assignments"?<Assignments/>:view==="Materials"?<Materials/>:view==="Attendance"?<Attendance/>:<Discussion/>}</div></main></div>
+  return <div className="shell"><aside className={open?"open":""}><div className="brand"><span>U</span><div><b>UniClass</b><small>Virtual learning</small></div></div><nav>{menu.map(m=><button key={m.name} className={view===m.name?"active":""} onClick={()=>{setView(m.name);setOpen(false)}}><span>{m.icon}</span>{m.name}{m.name==="Assignments"&&<i>2</i>}</button>)}</nav><div className="help"><span>?</span><b>Need help?</b><p>Visit the student support centre.</p><button>Get support</button></div><footer><span className="avatar">{initials}</span><div><b>{user.fullName}</b><small>{role}</small></div><button onClick={logout} title="Sign out">↪</button></footer></aside><main><header className="top"><button className="hamburger" onClick={()=>setOpen(!open)}>☰</button><div>UniClass <span>/</span> <b>{view}</b></div><span className="role-badge">{role}</span><button className="logout-button" onClick={logout}>Sign out</button><button className="notice">♢<i/></button><span className="avatar">{initials}</span></header><div className="content">{view==="Overview"?<Overview role={role} setView={setView} name={user.fullName}/>:view==="Classes"?<ClassroomView role={user.role} token={token}/>:view==="Assignments"?<AssignmentView role={user.role} token={token}/>:view==="Materials"?<MaterialView role={user.role} token={token}/>:view==="Attendance"?<AttendanceView role={user.role} token={token}/>:<DiscussionView token={token}/>}</div></main></div>
 }
