@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import AuthScreen, { AuthUser } from "./components/AuthScreen";
 
 type View = "Overview" | "Classes" | "Assignments" | "Materials" | "Attendance" | "Discussion";
 type Role = "Student" | "Teacher" | "Admin";
@@ -24,10 +25,10 @@ function PageTitle({eyebrow,title,text,action}:{eyebrow:string,title:string,text
   return <div className="page-title"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{text}</p></div><button className="primary">{action}</button></div>;
 }
 
-function Overview({role,setView}:{role:Role,setView:(v:View)=>void}){
+function Overview({role,setView,name}:{role:Role,setView:(v:View)=>void,name:string}){
   const stats=role==="Student"?[["3","Active classes","+1 this term"],["87%","Attendance","Above target"],["2","Tasks due","This week"]]:role==="Teacher"?[["4","Classes managed","128 learners"],["91%","Avg. attendance","+4% this month"],["18","To grade","3 overdue"]]:[["12","Active classes","468 learners"],["24","Teaching staff","All active"],["98%","System health","Operational"]];
   return <>
-    <div className="page-title welcome"><div><p className="eyebrow">Monday, 24 August</p><h1>Good evening, Harun.</h1><p>Here is what is happening in your classroom today.</p></div><button className="primary" onClick={()=>setView("Classes")}>{role==="Student"?"Join next class":role==="Teacher"?"Create assignment":"Manage users"}</button></div>
+    <div className="page-title welcome"><div><p className="eyebrow">Monday, 24 August</p><h1>Good evening, {name}.</h1><p>Here is what is happening in your classroom today.</p></div><button className="primary" onClick={()=>setView("Classes")}>{role==="Student"?"Join next class":role==="Teacher"?"Create assignment":"Manage users"}</button></div>
     <div className="stats">{stats.map(x=><article key={x[1]}><span>↗</span><strong>{x[0]}</strong><h3>{x[1]}</h3><p>{x[2]}</p></article>)}</div>
     <div className="columns"><section className="card"><header><div><p className="eyebrow">Your learning</p><h2>Upcoming classes</h2></div><button onClick={()=>setView("Classes")}>View all →</button></header>{courses.slice(0,2).map(c=><div className="class-row" key={c.code}><i className={c.color}>{c.code.slice(-3)}</i><div><b>{c.title}</b><small>{c.lecturer}</small><em>{c.time}</em></div><button>Open</button></div>)}</section>
       <section className="card"><header><div><p className="eyebrow">Keep moving</p><h2>Assignments</h2></div><button onClick={()=>setView("Assignments")}>View all →</button></header>{tasks.map(t=><div className="task" key={t.title}><i>{t.status==="Submitted"?"✓":""}</i><div><b>{t.title}</b><small>{t.course} · <em>{t.due}</em></small></div></div>)}</section></div>
@@ -45,4 +46,38 @@ function Attendance(){const rows=[["Applied Artificial Intelligence","12","11","
 
 function Discussion(){const talks=[["HA","How should we interpret feature importance?","Harun A Sesay · Applied AI","6 replies · 24 min ago"],["MK","Clarification on the ACL practical","Musa Kamara · Network Security","3 replies · 2 hours ago"],["FS","Useful sources for Chapter Three","Fatmata Sesay · Research Project","9 replies · Yesterday"]];return <><PageTitle eyebrow="Class community" title="Discussion board" text="Ask questions, share ideas and learn together." action="+ New discussion"/><div className="columns discussion"><section className="card">{talks.map(t=><article className="talk" key={t[1]}><span className="avatar">{t[0]}</span><div><b>{t[1]}</b><small>{t[2]}</small><em>{t[3]}</em></div></article>)}</section><aside className="card"><p className="eyebrow">Popular topics</p><h2>This week</h2>{["Machine learning","Research methods","Network labs","Project support"].map((x,i)=><div className="topic" key={x}><span>0{i+1}</span><b>{x}</b></div>)}</aside></div></>}
 
-export default function Home(){const[view,setView]=useState<View>("Overview");const[role,setRole]=useState<Role>("Student");const[open,setOpen]=useState(false);return <div className="shell"><aside className={open?"open":""}><div className="brand"><span>U</span><div><b>UniClass</b><small>Virtual learning</small></div></div><nav>{menu.map(m=><button key={m.name} className={view===m.name?"active":""} onClick={()=>{setView(m.name);setOpen(false)}}><span>{m.icon}</span>{m.name}{m.name==="Assignments"&&<i>2</i>}</button>)}</nav><div className="help"><span>?</span><b>Need help?</b><p>Visit the student support centre.</p><button>Get support</button></div><footer><span className="avatar">HA</span><div><b>Harun A Sesay</b><small>{role}</small></div><button>⋮</button></footer></aside><main><header className="top"><button className="hamburger" onClick={()=>setOpen(!open)}>☰</button><div>UniClass <span>/</span> <b>{view}</b></div><label>Preview as <select value={role} onChange={e=>setRole(e.target.value as Role)}><option>Student</option><option>Teacher</option><option>Admin</option></select></label><button className="notice">♢<i/></button><span className="avatar">HA</span></header><div className="content">{view==="Overview"?<Overview role={role} setView={setView}/>:view==="Classes"?<Classes/>:view==="Assignments"?<Assignments/>:view==="Materials"?<Materials/>:view==="Attendance"?<Attendance/>:<Discussion/>}</div></main></div>}
+export default function Home(){
+  const[view,setView]=useState<View>("Overview");
+  const[open,setOpen]=useState(false);
+  const[user,setUser]=useState<AuthUser|null>(null);
+  const[ready,setReady]=useState(false);
+
+  useEffect(()=>{
+    const saved=localStorage.getItem("uniclass_user");
+    if(saved){
+      try{setUser(JSON.parse(saved) as AuthUser)}catch{localStorage.removeItem("uniclass_user");localStorage.removeItem("uniclass_token")}
+    }
+    setReady(true);
+  },[]);
+
+  function authenticated(nextUser:AuthUser,token:string){
+    localStorage.setItem("uniclass_user",JSON.stringify(nextUser));
+    localStorage.setItem("uniclass_token",token);
+    setUser(nextUser);
+  }
+
+  function logout(){
+    localStorage.removeItem("uniclass_user");
+    localStorage.removeItem("uniclass_token");
+    setUser(null);
+    setView("Overview");
+  }
+
+  if(!ready)return <main className="auth-loading">Loading UniClass…</main>;
+  if(!user)return <AuthScreen onAuthenticated={authenticated}/>;
+
+  const role=(user.role.charAt(0).toUpperCase()+user.role.slice(1)) as Role;
+  const initials=user.fullName.split(" ").map(name=>name[0]).join("").slice(0,2).toUpperCase();
+
+  return <div className="shell"><aside className={open?"open":""}><div className="brand"><span>U</span><div><b>UniClass</b><small>Virtual learning</small></div></div><nav>{menu.map(m=><button key={m.name} className={view===m.name?"active":""} onClick={()=>{setView(m.name);setOpen(false)}}><span>{m.icon}</span>{m.name}{m.name==="Assignments"&&<i>2</i>}</button>)}</nav><div className="help"><span>?</span><b>Need help?</b><p>Visit the student support centre.</p><button>Get support</button></div><footer><span className="avatar">{initials}</span><div><b>{user.fullName}</b><small>{role}</small></div><button onClick={logout} title="Sign out">↪</button></footer></aside><main><header className="top"><button className="hamburger" onClick={()=>setOpen(!open)}>☰</button><div>UniClass <span>/</span> <b>{view}</b></div><span className="role-badge">{role}</span><button className="notice">♢<i/></button><span className="avatar">{initials}</span></header><div className="content">{view==="Overview"?<Overview role={role} setView={setView} name={user.fullName}/>:view==="Classes"?<Classes/>:view==="Assignments"?<Assignments/>:view==="Materials"?<Materials/>:view==="Attendance"?<Attendance/>:<Discussion/>}</div></main></div>
+}
