@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
-type Assignment = { id:number; classId:number; title:string; instructions:string; dueAt:string; classCode:string; classTitle:string; submissionCount?:number; submissionId?:number; status?:string; grade?:number|null };
+type Assignment = { id:number; classId:number; title:string; instructions:string; dueAt:string; classCode:string; classTitle:string; submissionCount?:number; submissionId?:number; status?:string; grade?:number|null; feedback?:string };
 type ClassOption = { id:number; code:string; title:string };
 type Submission = { id:number; studentName:string; email:string; content:string; fileUrl?:string; status:string; grade?:number|null; feedback?:string };
 
@@ -86,9 +86,9 @@ export default function AssignmentView({role,token}:{role:"student"|"teacher"|"a
 
   {message&&<div className="class-message">{message}</div>}
 
-  {selected&&role==="student"&&<form className="submission-form" onSubmit={submitWork}><button type="button" className="back-link" onClick={()=>setSelected(null)}>← Cancel</button><h2>{selected.title}</h2><p>{selected.instructions}</p><label>Your answer or submission note<textarea value={answer} onChange={e=>setAnswer(e.target.value)} required/></label><label>Project or file link (optional)<input type="url" value={fileUrl} onChange={e=>setFileUrl(e.target.value)} placeholder="https://..."/></label><button className="primary" disabled={busy}>{busy?"Submitting…":selected.submissionId?"Update submission":"Submit assignment"}</button></form>}
+  {selected&&role==="student"&&<form className="submission-form" onSubmit={submitWork}><button type="button" className="back-link" onClick={()=>setSelected(null)}>← Cancel</button><h2>{selected.title}</h2><p>{selected.instructions}</p>{selected.status==="graded"&&<div className="grade-feedback"><strong>Grade: {selected.grade}/100</strong><p>{selected.feedback||"No written feedback was added."}</p></div>}<label>Your answer or submission note<textarea value={answer} onChange={e=>setAnswer(e.target.value)} required/></label><label>Project or file link (optional)<input type="url" value={fileUrl} onChange={e=>setFileUrl(e.target.value)} placeholder="https://..."/></label><button className="primary" disabled={busy}>{busy?"Submitting…":selected.submissionId?"Update submission":"Submit assignment"}</button></form>}
 
-  {!selected&&(assignments.length?<section className="card assignment-list">{assignments.map(item=><article key={item.id}><div className="assignment-icon">DOC</div><div><em>{item.classCode}</em><h3>{item.title}</h3><p>{item.instructions}</p><small>Due {new Date(item.dueAt).toLocaleString()}</small></div><span className={item.status||""}>{role==="teacher"?`${item.submissionCount||0} submissions`:item.status||"Not submitted"}</span><button onClick={()=>role==="teacher"?viewSubmissions(item):setSelected(item)}>{role==="teacher"?"Review":"Open"}</button></article>)}</section>:<section className="empty-classes"><span>✓</span><h2>No assignments yet</h2><p>{role==="teacher"?"Create the first assignment for one of your classes.":"Your teachers have not posted any assignments."}</p></section>)}</>;
+  {!selected&&(assignments.length?<section className="card assignment-list">{assignments.map(item=><article key={item.id}><div className="assignment-icon">DOC</div><div><em>{item.classCode}</em><h3>{item.title}</h3><p>{item.instructions}</p><small>Due {new Date(item.dueAt).toLocaleString()}</small></div><span className={item.status||""}>{role==="teacher"?`${item.submissionCount||0} submissions`:item.status==="graded"?`Graded: ${item.grade}/100`:item.status||"Not submitted"}</span><button onClick={()=>role==="teacher"?viewSubmissions(item):setSelected(item)}>{role==="teacher"?"Review":"Open"}</button></article>)}</section>:<section className="empty-classes"><span>✓</span><h2>No assignments yet</h2><p>{role==="teacher"?"Create the first assignment for one of your classes.":"Your teachers have not posted any assignments."}</p></section>)}</>;
 }
 
 function SubmissionCard({item,busy,onGrade}:{item:Submission;busy:boolean;onGrade:(id:number,grade:string,feedback:string)=>void}){
